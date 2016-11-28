@@ -4,12 +4,12 @@ from stereoGeneParser import Parser
 
 
 #====Parse function============
-def parseHEAstereoGeneFromStatistics(organism, version, chromLengthFile, statFile, paramFile, resultPath):
+def parseHEAstereoGeneFromStatistics(organism, version, chromLengthFile, statFile, paramFile, resultPath, user, pwd, db):
 	"""
 	Load Human Epigenome Atlas result into database
 	"""
 	parser = Parser()
-	dbloader = DBloader(host="node13", port = 3306, user="lena", pwd="theeHuz9", db = "markup_corr_2014")
+	dbloader = DBloader(host="node13", port = 3306, user=user, pwd=pwd, db = db)
 	dbloader.connect()
 	
 	labs = []
@@ -94,12 +94,19 @@ parser.add_argument("-cf", "--configFile", type=str,
                     help="Path to the config file")
 parser.add_argument("-rp", "--resultPath",  type=str,
                     help="Path to result directory")
+parser.add_argument("-u", "--user",  type=str,
+                    help="db user")
+parser.add_argument("-p", "--pwd",  type=str,
+                    help="Database password")
+parser.add_argument("-d", "--db",  type=str,
+                    help="Database")
+
 args = parser.parse_args()
 
 print(args)
 
 
-parseHEAstereoGeneFromStatistics(args.organism, args.version, args.chromLengthFile, args.statFile, args.configFile, args.resultPath)
+parseHEAstereoGeneFromStatistics(args.organism, args.version, args.chromLengthFile, args.statFile, args.configFile, args.resultPath, args.user, args.pwd, args.db)
 
 
 
