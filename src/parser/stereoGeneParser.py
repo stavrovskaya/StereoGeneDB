@@ -6,8 +6,7 @@ class Run:
 	"""
 	All about the run class
 	"""
-	def __init__(self, path, track1_id, track2_id, param_id, prog_run_id, nFgr, Bkg_av, Fg_av, Bkg_sd, Fg_sd, tot_cor, mann_z, p_value,
-pc):
+	def __init__(self, path, track1_id, track2_id, param_id, prog_run_id, nFgr, nBkg, Fg_Corr, Fg_av_Corr, FgCorr_sd, Bg_Corr, Bg_av_Corr, BgCorr_sd, mann_Z, p_value, P_corr, version):
 		"""
 		Basic constructor
 		"""
@@ -17,14 +16,17 @@ pc):
 		self.param_id = param_id
 		self.prog_run_id = prog_run_id
 		self.nFgr = nFgr
-		self.Bkg_av = Bkg_av
-		self.Fg_av = Fg_av
-		self.Bkg_sd = Bkg_sd
-		self.Fg_sd = Fg_sd
-		self.tot_cor = tot_cor
-		self.mann_z = mann_z
+		self.nBkg = nBkg
+		self.Fg_Corr = Fg_Corr
+		self.Fg_av_Corr = Fg_av_Corr
+	        self.FgCorr_sd = FgCorr_sd
+        	self.Bg_Corr = Bg_Corr
+	        self.Bg_av_Corr = Bg_av_Corr
+        	self.BgCorr_sd = BgCorr_sd
+		self.mann_z = mann_Z
 		self.p_value = p_value
-		self.pc = pc
+		self.P_corr = P_corr
+	        self.version = version
 		
 		self.run_file_name = self.getRunFile(track1_id, track2_id, path)
 
@@ -33,29 +35,16 @@ pc):
 		"""
 		Form result file name from input file names
 		"""
-		ss1 = track1.split(".")
-		tissue1 = ss1[1]
-		feature1 = ss1[2]
-		
-		ss2 = track2.split(".")
-		tissue2 = ss2[1]
-		feature2 = ss2[2]
-		
-		
-		if tissue1 == tissue2:
-			path += "/tissues/" + tissue1 + "/"
-		else:
-			path += "/features/" + feature1 + "/"
 		
 		point1 = track1.rfind(".")
 		point2 = track2.rfind(".")
-		return path + track1[0:point1] + "~" + track2[0:point2]
+		return path + "/" + track1[0:point1] + "~" + track2[0:point2]
 
 	def __str__(self):
 		"""
 		Form string representation 
 		"""
-		return "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (self.table_id, self.track1_id, self.track2_id, self.param_id, self.prog_run_id, self.nFgr, self.Bkg_av, self.Fg_av, self.Bkg_sd, self.Fg_sd, self.tot_cor, self.mann_z, self.p_value, self.pc)
+		return "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (self.table_id, self.track1_id, self.track2_id, self.param_id, self.prog_run_id, self.nFgr, self.Bkg_av, self.Fg_av, self.Bkg_sd, self.Fg_sd, self.tot_cor, self.mann_z, self.p_value, self.P_corr, self.vesion)
 
 
 
@@ -64,16 +53,16 @@ class Track:#
 	"""
 	All about the track class
 	"""
-	def __init__(self, mark_id, sample_id, lab_id, tissue_id=None, devstage_id=None):
+	def __init__(self, mark, sample, lab, tissue=None, devstage=None):
 		"""
 		Basic constructor
 		"""
 		self.table_id = None
-		self.tissue_id = tissue_id
-		self.mark_id = mark_id
-		self.sample_id = sample_id
-		self.lab_id = lab_id
-		self.devstage_id = devstage_id		
+		self.tissue = tissue
+		self.mark = mark
+		self.sample = sample
+		self.lab = lab
+		self.devstage = devstage		
 
 	def set_id(self, table_id):
 		"""
@@ -92,20 +81,45 @@ class Parser:
 	"""
 	Parser of results
 	"""
-	def parseHEAtrack(self, track_name):#
+	def parseInputFileInfoTable(self, fname):
+                """
+                Parse info about files table (encode-like),
+                For important info_keys see example below,
+                the format of line is:
+                file_name\tinfo_key1=info_value1; info_key2=info_value2;...info_key3=info_value3
+                example:
+                UCSF_UBC.Penis_Foreskin_Keratinocyte_Primary_Cells.smRNA_Seq.skin01.wig	project=HEA;  cell=Penis_Foreskin_Keratinocyte_Primary_Cells; antibody=smRNA_Seq; lab=UCSF_UBC; replicate=skin01
+                """
+                fin = open(fname)
+                file_info = {}
+                for line in fin:
+                        ss = line.split("\t")
+                        file_name = ss[0]
+                        print("=====\n" + file_name)
+                        features = ss[1].split(";")
+                        f_hash = {}
+                        for f in features:
+                                name, value = f.strip().split("=")
+                                f_hash[name] = value
+
+                        print(f_hash.get("cell", None), f_hash.get("devstage", None),
+                              f_hash["antibody"], f_hash["lab"],
+                              f_hash.get("replicate", None), )
+                        file_info[file_name] = f_hash
+                
+                fin.close()
+                return(file_info)
+
+	def parseTrack(self, track_id, fileInfoHash):#
 		"""
-		Parse track name in Human Epigenom Atlas format(for example UCSF_UBC.Fetal_Brain.H3K27me3.HuFNSC01.wig)
 		Return object of class Track
 		"""
-		ss = track_name.split(".")
-		lab_id = ss[0]
-		tissue_id = ss[1]
-		mark_id = ss[2]
-		sample_id = ".".join(ss[3:(len(ss)-1)])
 		
-		return Track(mark_id, sample_id, lab_id, tissue_id)
+		info = fileInfoHash[track_id]
+		
+		return Track(info["antibody"], info["replicate"], info["lab"], info.get("cell", None), info.get("devstage", None))
 	
-	def parseStatistic(self, fname, param_id, resultPath):
+	def parseStatistic(self, fname, param_id, resultPath, fileInfoHash):
 		"""
 		Parse statistic file
 		param_id, resultPath are needed to form Run objects
@@ -122,6 +136,7 @@ class Parser:
 		tracks = {}
 		labs = set()
 		tissues = set()
+		devstages = set()
 		marks = set()
 		samples = set()
 	
@@ -138,30 +153,36 @@ class Parser:
 			#read track1, put to the list
 			track1_id = data["name1"]
 			if track1_id not in tracks:
-				track1 = self.parseHEAtrack(track1_id)#specific for Human Epigenome Atlas
-				labs.add(track1.lab_id)
-				tissues.add(track1.tissue_id)
-				marks.add(track1.mark_id)
-				samples.add(track1.sample_id)
+				track1 = self.parseTrack(track1_id, fileInfoHash)
+				labs.add(track1.lab)
+				if (track1.tissue != None):
+					tissues.add(track1.tissue)
+				if (track1.devstage != None):
+					devstages.add(track1.devstage)
+				marks.add(track1.mark)
+				samples.add(track1.sample)
 				tracks[track1_id] = track1
 			
 			#read track2, put to the list
 			track2_id = data["name2"]
 			if track2_id not in tracks:
-				track2 = self.parseHEAtrack(track2_id)#specific for Human Epigenome Atlas
-				labs.add(track2.lab_id)
-				tissues.add(track2.tissue_id)
-				marks.add(track2.mark_id)
-				samples.add(track2.sample_id)
+				track2 = self.parseTrack(track2_id, fileInfoHash)
+				labs.add(track2.lab)
+				if (track2.tissue != None):
+					tissues.add(track2.tissue)
+				if (track2.devstage != None):
+					devstages.add(track2.devstage)
+
+				marks.add(track2.mark)
+				samples.add(track2.sample)
 				tracks[track2_id] = track2
 			#read other params
 			
-		
-			runList.append(Run(resultPath, track1_id, track2_id, param_id, prog_run_id, data["nFgr"], data["Bkg_av"], data["Fg_av"], data["Bkg_sd"], data["Fg_sd"], data["tot_cor"], data["Mann-Z"], data["p-value"],
-	data["pc"]))
+			runList.append(Run(resultPath, track1_id, track2_id, param_id, prog_run_id, data["nFgr"], data["nBkg"], data["Fg_Corr"], data["Fg_av_Corr"], data["FgCorr_sd"], data["Bg_Corr"], data["Bg_av_Corr"], data["BgCorr_sd"], data["Mann-Z"], data["p-value"],
+	data["P-corr"], data["version"]))
 		fin.close()
 
-		return	tracks, runList, labs, tissues, marks, samples 
+		return	tracks, runList, labs, tissues, devstages, marks, samples 
 	
 	def parseChrom(self, fname):
 		"""
@@ -200,6 +221,8 @@ class Parser:
 		
 		names = []
 		for line in fin:
+			if line.startswith("#"):
+				continue
 			ss = line.split()
 			if (i==0):
 				names.append("All")
@@ -268,10 +291,44 @@ class Parser:
 		fin.close()
 		return(fg)
 
-
+#id    	trackPath           	resPath             	map                 	mapIv       	pcorProfile         	NA	maxNA 	maxZer	interv	strand	compl 	step	bpType	wSize 	wStep 	flank 	noise 	kernel	Kern-Sgm	kern-Sh 	nShuffle	MaxShfl 	threshold
 	def parseParam(self, fname):
 		"""
 		Parse parameters file
+		Return dict of parameters
+		"""
+		fin = open(fname)
+		paramHash = {}
+		for line in fin:
+			line = line.strip()
+			if line.startswith("id"):
+		                keys = line.split()
+		        else:
+                		values = line.split()
+                for i in range(len(keys)):
+                    if keys[i] == "trackPath" or keys[i] == "resPath":
+                        continue
+                    key = keys[i].replace("-", "_")
+                    value = values[i]
+                    if key=="kernel":
+                        value = 0L
+                        if values[i]=="N":
+                            value = 1L
+                        elif values[i]=="L":
+                            value = 2L
+                        else:
+                            value = 3L
+
+                    paramHash[key] = value
+
+
+		fin.close()
+
+		return Param(paramHash)
+
+	def parseConfigParam(self, fname):
+		"""
+		Parse parameters Config file
 		Return dict of parameters
 		"""
 		fin = open(fname)
@@ -283,13 +340,10 @@ class Parser:
 			ss = re.split("[ =\t;]+", line)
 			print(ss)
 			if ss[0].strip()=="profPath":
-				paramHash["prof_path"] = ss[1].strip()
 				continue
 			if ss[0].strip()=="trackPath":
-				paramHash["track_path"] = ss[1].strip()
 				continue
 			if ss[0].strip()=="resPath":
-				paramHash["res_path"] = ss[1].strip()
 				continue
 			if ss[0].strip()=="map":
 				paramHash["map"] = ss[1].strip()
@@ -344,39 +398,26 @@ class Parser:
 				continue
 
 			if ss[0].strip()=="statistics":
-				paramHash["statistics"] = ss[1].strip()
+#				paramHash["statistics"] = ss[1].strip()
 				continue
 
 			if ss[0].strip()=="aliases":
-				paramHash["aliases"] = ss[1].strip()
+#				paramHash["aliases"] = ss[1].strip()
 				continue
 
 			if ss[0].strip()=="log":
-				paramHash["log"] = ss[1].strip()
+#				paramHash["log"] = ss[1].strip()
 				continue
 
 			if ss[0].strip()=="chrom":
-				paramHash["chrom"] = ss[1].strip()
+#				paramHash["chrom"] = ss[1].strip()
 				continue
 
-			if ss[0].strip()=="na":
+			if ss[0].strip()=="NA":
 				paramHash["na"] = ss[1].strip()
 				continue
 
-			if ss[0].strip()=="type":
-
-				type1 = ss[1].strip()
-				id1 = 0
-
-				if type1 == "BED":
-					id1 = 1
-				elif type1 == "BEDGRAPH":
-					id1 = 2
-				elif type1 == "WIG":
-					id1 = 3
-				else:
-					id1 = 4
-				paramHash["input_type_id"] = id1
+			if ss[0].strip()=="type":                
 				continue
 
 			if ss[0].strip()=="intervals":
@@ -417,8 +458,8 @@ class Parser:
 				paramHash["scale_factor"] = ss[1].strip()
 				continue
 
-			if ss[0].strip()=="step":
-				paramHash["step"] = ss[1].strip()
+			if ss[0].strip()=="bin":
+				paramHash["bin"] = ss[1].strip()
 				continue
 
 			if ss[0].strip()=="scale":
@@ -474,9 +515,10 @@ class Parser:
 			if ss[0].strip()=="maxShuffle":
 				paramHash["maxShuffle"] = ss[1].strip()
 				continue
-			if ss[0].strip()=="mapIv":
-				paramHash[mapIv] = ss[1].strip()
+			if ss[0].strip()=="minShuffle":
+				paramHash["minShuffle"] = ss[1].strip()
 				continue
+             
 		
 			if ss[0].strip()=="threshold":
 				paramHash["threshold"] = ss[1].strip()
@@ -484,13 +526,6 @@ class Parser:
 			if ss[0].strip()=="corrOnly":
 				paramHash["corrOnly"] = ss[1].strip()
 				continue
-
-			if ss[0].strip()=="outDistr":
-			
-
-				paramHash[outDistr] = ss[1].strip()
-				continue
-
 
 			if ss[0].strip()=="mapIv":
 				dist = ss[1].strip()
@@ -522,7 +557,6 @@ class Parser:
 		fin.close()
 
 		return Param(paramHash)
-
 
 	
 

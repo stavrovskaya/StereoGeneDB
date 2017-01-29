@@ -4,12 +4,12 @@ from stereoGeneParser import Parser
 
 
 #====Parse function============
-def parseHEAstereoGeneFromStatistics(organism, version, chromLengthFile, statFile, paramFile, resultPath, user, pwd, db):
+def parseStereoGeneResultFromStatistics(organism, assembly, chromLengthFile, statFile, filesInfoFile, paramFile, trackPath, resultPath, host, user, pwd, db, port):
 	"""
-	Load Human Epigenome Atlas result into database
+	Load result into database
 	"""
 	parser = Parser()
-	dbloader = DBloader(host="node13", port = 3306, user=user, pwd=pwd, db = db)
+	dbloader = DBloader(host=host, port = port, user=user, pwd=pwd, db = db)
 	dbloader.connect()
 	
 	labs = []
@@ -18,8 +18,10 @@ def parseHEAstereoGeneFromStatistics(organism, version, chromLengthFile, statFil
 	samples = []
 
 #Parse pipeline:
+#load trackPath
+	track_path_id = dbloader.loadTrackPath(trackPath)
 #load organism
-	org_id = dbloader.loadOrg(organism, version)
+	org_id = dbloader.loadOrg(organism, assembly)
 	
 #read chromosom length file
 #load chrom lengths to db
@@ -28,22 +30,27 @@ def parseHEAstereoGeneFromStatistics(organism, version, chromLengthFile, statFil
 	
 #read params files
 #load params to db
-	param = parser.parseParam(paramFile)
+	param = parser.parseConfigParam(paramFile)
 	param_id = dbloader.loadParams(param)
 	
+#read files info file
+	fileInfoHash = parser.parseInputFileInfoTable(filesInfoFile)
 #read statistics file
-	tracks, runList, labs, tissues, marks, samples = parser.parseStatistic(statFile, param_id, resultPath)
+	tracks, runList, labs, tissues, devstages, marks, samples = parser.parseStatistic(statFile, param_id, resultPath, fileInfoHash)
 #load labs
 	lab_ids = dbloader.loadLabs(labs)
 #load tissues
 	tissue_ids = dbloader.loadTissues(tissues)
+#load devstages
+	devstage_ids = dbloader.loadDevstages(devstages)
+	print(devstage_ids)
 #load marks
 	mark_ids = dbloader.loadMarks(marks)	
 #load samples
 	sample_ids = dbloader.loadSamples(samples)
 	print(sample_ids)
 #load tracks
-	track_ids = dbloader.loadTracks(tracks, mark_ids, sample_ids, lab_ids, tissue_ids)
+	track_ids = dbloader.loadTracks(tracks, track_path_id, mark_ids, sample_ids, lab_ids, tissue_ids, devstage_ids)
 #	for each run
 	for run in runList:	
 #		load run statistic
@@ -80,12 +87,13 @@ def parseHEAstereoGeneFromStatistics(organism, version, chromLengthFile, statFil
 
 
 # read params from command line
+
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-o", "--organism", type=str,
                     help="Organism id")
-parser.add_argument("-v", "--version",  type=str,
-                    help="Genome version")
+parser.add_argument("-a", "--assembly",  type=str,
+                    help="Genome assebly")
 parser.add_argument("-chr", "--chromLengthFile", type=str,
                     help="Path to the file with chromosom lengths")
 parser.add_argument("-st", "--statFile",  type=str,
@@ -94,19 +102,27 @@ parser.add_argument("-cf", "--configFile", type=str,
                     help="Path to the config file")
 parser.add_argument("-rp", "--resultPath",  type=str,
                     help="Path to result directory")
+parser.add_argument("-fi", "--fileInfo",  type=str,
+                    help="Path to track information file")
+parser.add_argument("-tp", "--trackPath",  type=str,
+                    help="Path to initial tracks directory")
+parser.add_argument("-ho", "--host",  type=str,
+                    help="Database host")
+parser.add_argument("-d", "--db",  type=str,
+                    help="Database")
 parser.add_argument("-u", "--user",  type=str,
                     help="db user")
 parser.add_argument("-p", "--pwd",  type=str,
                     help="Database password")
-parser.add_argument("-d", "--db",  type=str,
-                    help="Database")
+parser.add_argument("-po", "--port",  type=int,
+                    help="Database port")
 
 args = parser.parse_args()
 
 print(args)
 
 
-parseHEAstereoGeneFromStatistics(args.organism, args.version, args.chromLengthFile, args.statFile, args.configFile, args.resultPath, args.user, args.pwd, args.db)
+parseStereoGeneResultFromStatistics(args.organism, args.assembly, args.chromLengthFile, args.statFile, args.fileInfo,  args.configFile, args.trackPath, args.resultPath, args.host, args.user, args.pwd, args.db, args.port)
 
 
 
