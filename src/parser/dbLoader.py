@@ -165,10 +165,10 @@ class DBloader:
 
 		cursor = self.cnx.cursor()
 
-		add_sample = ("""INSERT INTO devstage 
+		add_devstage = ("""INSERT INTO devstage 
 			       (devstage) 
 			       VALUES (%s)
-			       ON DUPLICATE KEY UPDATE id= LAST_INSERT_ID(id)""")
+			       ON DUPLICATE KEY UPDATE id= LAST_INSERT_ID(id)""") #was add_sample
 		for devstage in devstages:
 			cursor.execute(add_devstage, [devstage])
 			devstage_id = cursor.lastrowid
@@ -215,7 +215,7 @@ class DBloader:
 
 			devstage_id = "NULL"
 			if (track.devstage != None):
-				devstage_id = devstage_ids[track.dev_stage]
+				devstage_id = devstage_ids[track.devstage] # was track.dev_stage
 				track_tuple = (mark_id, sample_id, lab_id, devstage_id, track_path_id)
 				cursor.execute(add_track_devstage, track_tuple)
 				track_id = cursor.lastrowid

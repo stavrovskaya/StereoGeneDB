@@ -6,14 +6,13 @@ class Run:
 	"""
 	All about the run class
 	"""
-	def __init__(self, path, track1_id, track2_id, param_id, prog_run_id, nFgr, nBkg, Fg_Corr, Fg_av_Corr, FgCorr_sd, Bg_Corr, Bg_av_Corr, BgCorr_sd, mann_Z, p_value, P_corr, version):
+	def __init__(self, path, track1_id, track2_id, prog_run_id, nFgr, nBkg, Fg_Corr, Fg_av_Corr, FgCorr_sd, Bg_Corr, Bg_av_Corr, BgCorr_sd, mann_Z, p_value, P_corr, version):
 		"""
 		Basic constructor
 		"""
 		self.table_id = None
 		self.track1_id = track1_id
 		self.track2_id = track2_id
-		self.param_id = param_id
 		self.prog_run_id = prog_run_id
 		self.nFgr = nFgr
 		self.nBkg = nBkg
@@ -119,7 +118,7 @@ class Parser:
 		
 		return Track(info["antibody"], info["replicate"], info["lab"], info.get("cell", None), info.get("devstage", None))
 	
-	def parseStatistic(self, fname, param_id, resultPath, fileInfoHash):
+	def parseStatistic(self, fname, resultPath, fileInfoHash):
 		"""
 		Parse statistic file
 		param_id, resultPath are needed to form Run objects
@@ -178,7 +177,7 @@ class Parser:
 				tracks[track2_id] = track2
 			#read other params
 			
-			runList.append(Run(resultPath, track1_id, track2_id, param_id, prog_run_id, data["nFgr"], data["nBkg"], data["Fg_Corr"], data["Fg_av_Corr"], data["FgCorr_sd"], data["Bg_Corr"], data["Bg_av_Corr"], data["BgCorr_sd"], data["Mann-Z"], data["p-value"],
+			runList.append(Run(resultPath, track1_id, track2_id, prog_run_id, data["nFgr"], data["nBkg"], data["Fg_Corr"], data["Fg_av_Corr"], data["FgCorr_sd"], data["Bg_Corr"], data["Bg_av_Corr"], data["BgCorr_sd"], data["Mann-Z"], data["p-value"],
 	data["P-corr"], data["version"]))
 		fin.close()
 
@@ -209,7 +208,7 @@ class Parser:
 		Parse distance correlation file
 		Return:
 		poses - position list, 
-		chrom_dist_hash - distances by chromosom hash, 
+		chrom_dist_hash - distances by chromosome hash, 
 		bg_dist - background distance value list
 		"""
 		print(fname)
@@ -298,33 +297,108 @@ class Parser:
 		Return dict of parameters
 		"""
 		fin = open(fname)
+		runParamHash = {}
 		paramHash = {}
+		runId = ""
 		for line in fin:
 			line = line.strip()
 			if line.startswith("id"):
 		                keys = line.split()
+				continue
 		        else:
+				if (runId != ""):
+					runParamHash[runId] = paramHash
+					paramHash = {}
+					
                 		values = line.split()
-                for i in range(len(keys)):
-                    if keys[i] == "trackPath" or keys[i] == "resPath":
-                        continue
-                    key = keys[i].replace("-", "_")
-                    value = values[i]
-                    if key=="kernel":
-                        value = 0L
-                        if values[i]=="N":
-                            value = 1L
-                        elif values[i]=="L":
-                            value = 2L
-                        else:
-                            value = 3L
 
-                    paramHash[key] = value
-
-
+	                for i in range(len(keys)):
+			    if keys[i] == "id":
+				runId = values[i]
+				continue
+        	            if keys[i] == "trackPath" or keys[i] == "resPath":
+                	        continue
+	                    key = keys[i]
+        	            value = values[i]
+	
+                	    if key=="kernelType":
+	                        if values[i]=="NORMAL":
+        	                    value = 1L
+                	        elif values[i]=="LEFT_EXP":
+                        	    value = 2L
+	                        else:
+        	                    value = 3L
+                	        key = "kernelType_id"
+			    if key == "complFg":
+				if values[i] == "IGNORE_STRAND":
+				    value = 1L
+				elif values[i] == "COLINEAR":
+				    value = 2L
+				else:
+				    value = 3L
+				key = "complFg_id"
+			    if key == "NA":
+				key = "na"
+			    if key == "bpType":
+				if values[i] == "SCORE":
+					value = 1L
+				elif values[i] == "SIGNAL":
+					value = 2L
+				else:
+					value = 3L
+				key = "bpType_id"		
+			    if key == "intervals":
+				if values[i] == "NONE":
+					value = 1L
+				elif values[i] == "GENE":
+					value = 2L
+				elif values[i] == "EXON":
+					value = 3L
+				elif values[i] == "IVS":
+					value = 4L
+				elif values[i] == "GENE_BEG":
+					value = 5L
+				elif values[i] == "EXON_BEG":
+					value = 6L
+				elif values[i] == "IVS_BEG":
+					value = 7L
+				elif values[i] == "GENE_END":
+					value = 8L
+				elif values[i] == "EXON_END":
+					value = 9L
+				elif values[i] == "IVS_END":
+					value = 10L
+				key = "intervals_id"
+			    if key == "LCScale":
+				if values[i] == "LOG":
+					value = 1L
+				elif values[i] == "LIN":
+					value = 2L
+				else:
+					value = 3L
+				key = "lcscale_id"
+			    if key == "outLC":
+				if values[i] == "NONE":
+					value = 1L
+				elif values[i] == "BASE":
+					value = 2L
+				elif values[i] == "CENTER":
+					value = 3L
+				elif values[i] == "BASE_MULT":
+					value = 4L
+				else:
+					value = 5L
+				key = "outLC_id"
+		
+                	    paramHash[key] = value
+	
+		        runParamHash[runId] = paramHash
 		fin.close()
-
-		return Param(paramHash)
+                                                       
+		paramParamHash = {}
+		for runId in runParamHash:
+			paramParamHash[runId] = Param(runParamHash[runId])
+		return paramParamHash
 
 	def parseConfigParam(self, fname):
 		"""

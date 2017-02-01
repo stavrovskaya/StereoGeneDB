@@ -30,13 +30,15 @@ def parseStereoGeneResultFromStatistics(organism, assembly, chromLengthFile, sta
 	
 #read params files
 #load params to db
-	param = parser.parseConfigParam(paramFile)
-	param_id = dbloader.loadParams(param)
+	runParam = parser.parseParam(paramFile)
+	paramIdHash = {}
+	for runId in runParam:
+		paramIdHash[runId] = dbloader.loadParams(runParam[runId])
 	
 #read files info file
 	fileInfoHash = parser.parseInputFileInfoTable(filesInfoFile)
 #read statistics file
-	tracks, runList, labs, tissues, devstages, marks, samples = parser.parseStatistic(statFile, param_id, resultPath, fileInfoHash)
+	tracks, runList, labs, tissues, devstages, marks, samples = parser.parseStatistic(statFile, resultPath, fileInfoHash)
 #load labs
 	lab_ids = dbloader.loadLabs(labs)
 #load tissues
@@ -53,6 +55,8 @@ def parseStereoGeneResultFromStatistics(organism, assembly, chromLengthFile, sta
 	track_ids = dbloader.loadTracks(tracks, track_path_id, mark_ids, sample_ids, lab_ids, tissue_ids, devstage_ids)
 #	for each run
 	for run in runList:	
+#		load param
+		param_id = paramIdHash[run.prog_run_id]
 #		load run statistic
 		run_id = dbloader.loadRun(run, track_ids, param_id)
 
@@ -98,8 +102,8 @@ parser.add_argument("-chr", "--chromLengthFile", type=str,
                     help="Path to the file with chromosom lengths")
 parser.add_argument("-st", "--statFile",  type=str,
                     help="Path to the of statistics file")
-parser.add_argument("-cf", "--configFile", type=str,
-                    help="Path to the config file")
+parser.add_argument("-prm", "--paramFile", type=str,
+                    help="Path to the params file")
 parser.add_argument("-rp", "--resultPath",  type=str,
                     help="Path to result directory")
 parser.add_argument("-fi", "--fileInfo",  type=str,
@@ -122,7 +126,7 @@ args = parser.parse_args()
 print(args)
 
 
-parseStereoGeneResultFromStatistics(args.organism, args.assembly, args.chromLengthFile, args.statFile, args.fileInfo,  args.configFile, args.trackPath, args.resultPath, args.host, args.user, args.pwd, args.db, args.port)
+parseStereoGeneResultFromStatistics(args.organism, args.assembly, args.chromLengthFile, args.statFile, args.fileInfo,  args.paramFile, args.trackPath, args.resultPath, args.host, args.user, args.pwd, args.db, args.port)
 
 
 
