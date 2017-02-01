@@ -14,7 +14,7 @@ CREATE TABLE  dist_output_param (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
 
-CREATE TABLE  kernel_type_param (
+CREATE TABLE  kernelType_param (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `kernel_type` varchar(10) COLLATE latin1_general_ci NOT NULL,
   PRIMARY KEY (`id`)
@@ -57,12 +57,12 @@ CREATE TABLE  outLC_param(
 CREATE TABLE  param (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `map` varchar(100) COLLATE latin1_general_ci,
-  `pcor_profile` varchar(100) COLLATE latin1_general_ci,
+  `pcorProfile` varchar(100) COLLATE latin1_general_ci,
   `wSize` int(11) NOT NULL,
   `wStep` int(11) NOT NULL,
-  `kernel_type_id` int(11) NOT NULL,
-  `kernel_sigma` int(11) NOT NULL,
-  `kernel_shift` int(11) NOT NULL,
+  `kernelType_id` int(11) NOT NULL,
+  `kernelSigma` int(11) NOT NULL,
+  `kernelShift` int(11) NOT NULL,
   `complFg_id` int(11) NOT NULL,
   `na` tinyint(1) NOT NULL,
   `bin` int(11) NOT NULL,
@@ -74,17 +74,17 @@ CREATE TABLE  param (
   `nShuffle` int(11) NOT NULL,
   `mapIv` varchar(50) COLLATE latin1_general_ci,
   `threshold` int(11) NOT NULL,
-  `dist_output_id` int(11) NOT NULL,
   `outThreshold` float NOT NULL,
   `outChrom` tinyint(1) NOT NULL,
   `intervals_id` int(11) NOT NULL,
   `lcscale_id` int(11) NOT NULL,
   `outLC_id` int(11) NOT NULL,
+  `writeDistr` tinyint(1) NOT NULL,
+  `Distances` tinyint(1) NOT NULL,
   PRIMARY KEY (`id`),
-  CONSTRAINT `kernel_type_fk` FOREIGN KEY (`kernel_type_id`) REFERENCES `kernel_type_param` (`id`),
+  CONSTRAINT `kernel_type_fk` FOREIGN KEY (`kernelType_id`) REFERENCES `kernelType_param` (`id`),
   CONSTRAINT `compl_fg_fk` FOREIGN KEY (`complFg_id`) REFERENCES `complFg_param` (`id`),
   CONSTRAINT `bp_type_fk` FOREIGN KEY (`bpType_id`) REFERENCES `bpType_param` (`id`),
-  CONSTRAINT `dist_output_fk` FOREIGN KEY (`dist_output_id`) REFERENCES `dist_output_param` (`id`),
   CONSTRAINT `intervals_fk` FOREIGN KEY (`intervals_id`) REFERENCES `intervals_param` (`id`),
   CONSTRAINT `lcscale_fk` FOREIGN KEY (`lcscale_id`) REFERENCES `lcscale_param` (`id`),
   CONSTRAINT `outLC_fk` FOREIGN KEY (`outLC_id`) REFERENCES `outLC_param` (`id`)
@@ -275,18 +275,14 @@ INSERT INTO bpType_param (bpType) VALUES ("SCORE");
 INSERT INTO bpType_param (bpType) VALUES ("SIGNAL");
 INSERT INTO bpType_param (bpType) VALUES ("LOGPVAL");
 
-INSERT INTO dist_output_param (dist_output) VALUES ("NONE");
-INSERT INTO dist_output_param (dist_output) VALUES ("TOTAL");
-INSERT INTO dist_output_param (dist_output) VALUES ("DETAIL");
-
-
+INSERT INTO complFg_param (complFg) VALUES ("IGNORE_STRAND");
 INSERT INTO complFg_param (complFg) VALUES ("COLINEAR");
 INSERT INTO complFg_param (complFg) VALUES ("COMPLEMENT");
-INSERT INTO complFg_param (complFg) VALUES ("IGNORE_STRAND");
 
-INSERT INTO kernel_type_param (kernel_type) VALUES ("NORMAL");
-INSERT INTO kernel_type_param (kernel_type) VALUES ("RIGHT_EXP");
-INSERT INTO kernel_type_param (kernel_type) VALUES ("LEFT_EXP");
+
+INSERT INTO kernelType_param (kernel_type) VALUES ("NORMAL");
+INSERT INTO kernelType_param (kernel_type) VALUES ("RIGHT_EXP");
+INSERT INTO kernelType_param (kernel_type) VALUES ("LEFT_EXP");
 
 INSERT INTO outWig_param (outWig) VALUES ("NONE");
 INSERT INTO outWig_param (outWig) VALUES ("BASE");

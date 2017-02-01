@@ -11,7 +11,7 @@ DROP TABLE  intervals_param;
 DROP TABLE  lcscale_param;
 DROP TABLE  outLC_param;
 DROP TABLE  complFg_param; 
-DROP TABLE  kernel_type_param;
+DROP TABLE  kernelType_param;
 DROP TABLE  track;
 DROP TABLE  track_path;
 DROP TABLE  chrom;
