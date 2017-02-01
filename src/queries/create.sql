@@ -1,20 +1,8 @@
-CREATE TABLE  outRes_param (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `outRes` varchar(10) COLLATE latin1_general_ci NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
 
 CREATE TABLE  outWig_param (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `outWig` varchar(20) COLLATE latin1_general_ci NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
-
-
-CREATE TABLE  scale_param (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `scale` varchar(10) COLLATE latin1_general_ci NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
@@ -48,45 +36,59 @@ CREATE TABLE  bpType_param(
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
+CREATE TABLE  intervals_param(
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `intervals` varchar(10) COLLATE latin1_general_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
+
+CREATE TABLE  lcscale_param(
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `lcscale` varchar(10) COLLATE latin1_general_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
+
+CREATE TABLE  outLC_param(
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `outLC` varchar(20) COLLATE latin1_general_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
+
 CREATE TABLE  param (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `map` varchar(100) COLLATE latin1_general_ci DEFAULT NULL,
-  `pcor_profile` varchar(100) COLLATE latin1_general_ci DEFAULT NULL,
-  `wSize` int(11) NOT NULL DEFAULT '100000',
-  `wStep` int(11) NOT NULL DEFAULT '100000',
-  `kernel_type_id` int(11) NOT NULL DEFAULT '1',
-  `kernel_sigma` int(11) NOT NULL DEFAULT '1000',
-  `kernel_shift` int(11) NOT NULL DEFAULT '0',
-  `kernel_NS` int(11) NOT NULL DEFAULT '0',
-  `compl_Fg_id` int(11) NOT NULL DEFAULT '3',
-  `na` tinyint(1) DEFAULT '0',
-  `strand` tinyint(1) NOT NULL DEFAULT '0',
-  `scale_factor` float NOT NULL DEFAULT '0.2',
-  `bin` int(11) NOT NULL DEFAULT '100',
-  `scale_id` int(11) DEFAULT '3',
-  `lAauto` int(11) NOT NULL DEFAULT '0',
-  `bpType_id` int(11) DEFAULT '1',
-  `flankSize` int(11) NOT NULL DEFAULT '500',
-  `noiseLevel` float NOT NULL DEFAULT '0.5',
-  `maxNA` int(11) NOT NULL DEFAULT '50',
-  `maxZero` int(11) NOT NULL DEFAULT '80',
-  `nShuffle` int(11) NOT NULL DEFAULT '100',
-  `maxShuffle` int(11) NOT NULL DEFAULT '10000',
-  `minShuffle` int(11) NOT NULL DEFAULT '1000',
-  `mapIv` varchar(50) COLLATE latin1_general_ci DEFAULT NULL,
-  `threshold` int(11) NOT NULL DEFAULT '0',
-  `corrOnly` tinyint(1) NOT NULL DEFAULT '0',
-  `outRes_id` int(11) DEFAULT '3',
-  `dist_output_id` int(11) DEFAULT '2',
-  `outThreshold` float NOT NULL DEFAULT '1',
-  `outSpectr` tinyint(1) NOT NULL DEFAULT '0',
-  `outChrom` tinyint(1) NOT NULL DEFAULT '0',
+  `map` varchar(100) COLLATE latin1_general_ci,
+  `pcor_profile` varchar(100) COLLATE latin1_general_ci,
+  `wSize` int(11) NOT NULL,
+  `wStep` int(11) NOT NULL,
+  `kernel_type_id` int(11) NOT NULL,
+  `kernel_sigma` int(11) NOT NULL,
+  `kernel_shift` int(11) NOT NULL,
+  `complFg_id` int(11) NOT NULL,
+  `na` tinyint(1) NOT NULL,
+  `bin` int(11) NOT NULL,
+  `bpType_id` int(11) NOT NULL,
+  `flankSize` int(11) NOT NULL,
+  `noiseLevel` float NOT NULL,
+  `maxNA` int(11) NOT NULL,
+  `maxZero` int(11) NOT NULL,
+  `nShuffle` int(11) NOT NULL,
+  `mapIv` varchar(50) COLLATE latin1_general_ci,
+  `threshold` int(11) NOT NULL,
+  `dist_output_id` int(11) NOT NULL,
+  `outThreshold` float NOT NULL,
+  `outChrom` tinyint(1) NOT NULL,
+  `intervals_id` int(11) NOT NULL,
+  `lcscale_id` int(11) NOT NULL,
+  `outLC_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `kernel_type_fk` (`kernel_type_id`),
-  KEY `compl_fg_fk` (`compl_Fg_id`),
-  KEY `bp_type_fk` (`bpType_id`),
-  KEY `dist_output_fk` (`dist_output_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
+  CONSTRAINT `kernel_type_fk` FOREIGN KEY (`kernel_type_id`) REFERENCES `kernel_type_param` (`id`),
+  CONSTRAINT `compl_fg_fk` FOREIGN KEY (`complFg_id`) REFERENCES `complFg_param` (`id`),
+  CONSTRAINT `bp_type_fk` FOREIGN KEY (`bpType_id`) REFERENCES `bpType_param` (`id`),
+  CONSTRAINT `dist_output_fk` FOREIGN KEY (`dist_output_id`) REFERENCES `dist_output_param` (`id`),
+  CONSTRAINT `intervals_fk` FOREIGN KEY (`intervals_id`) REFERENCES `intervals_param` (`id`),
+  CONSTRAINT `lcscale_fk` FOREIGN KEY (`lcscale_id`) REFERENCES `lcscale_param` (`id`),
+  CONSTRAINT `outLC_fk` FOREIGN KEY (`outLC_id`) REFERENCES `outLC_param` (`id`)
+ ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
 
 CREATE TABLE  mark (
@@ -268,18 +270,10 @@ CREATE TABLE  dist_corr (
 
 
 
-INSERT INTO scale_param(scale) VALUES('LOG');
-INSERT INTO scale_param(scale) VALUES('LIN');
-INSERT INTO scale_param(scale) VALUES('AUTO');
 
 INSERT INTO bpType_param (bpType) VALUES ("SCORE");
 INSERT INTO bpType_param (bpType) VALUES ("SIGNAL");
 INSERT INTO bpType_param (bpType) VALUES ("LOGPVAL");
-
-INSERT INTO outRes_param (outRes) VALUES ("XML");
-INSERT INTO outRes_param (outRes) VALUES ("TAB");
-INSERT INTO outRes_param (outRes) VALUES ("BOTH");
-INSERT INTO outRes_param (outRes) VALUES ("NONE");
 
 INSERT INTO dist_output_param (dist_output) VALUES ("NONE");
 INSERT INTO dist_output_param (dist_output) VALUES ("TOTAL");
@@ -299,3 +293,27 @@ INSERT INTO outWig_param (outWig) VALUES ("BASE");
 INSERT INTO outWig_param (outWig) VALUES ("CENTER");
 INSERT INTO outWig_param (outWig) VALUES ("BASE_MULT");
 INSERT INTO outWig_param (outWig) VALUES ("CENTER_MULT");
+
+INSERT INTO intervals_param (intervals) VALUES ("NONE");
+INSERT INTO intervals_param (intervals) VALUES ("GENE");
+INSERT INTO intervals_param (intervals) VALUES ("EXON");
+INSERT INTO intervals_param (intervals) VALUES ("IVS");
+INSERT INTO intervals_param (intervals) VALUES ("GENE_BEG");
+INSERT INTO intervals_param (intervals) VALUES ("EXON_BEG");
+INSERT INTO intervals_param (intervals) VALUES ("IVS_BEG");
+INSERT INTO intervals_param (intervals) VALUES ("GENE_END");
+INSERT INTO intervals_param (intervals) VALUES ("EXON_END");
+INSERT INTO intervals_param (intervals) VALUES ("IVS_END");
+
+INSERT INTO lcscale_param (lcscale) VALUES ("LOG");
+INSERT INTO lcscale_param (lcscale) VALUES ("LIN");
+INSERT INTO lcscale_param (lcscale) VALUES ("LOG_LOG");
+
+INSERT INTO outLC_param (outLC) VALUES ("NONE");
+INSERT INTO outLC_param (outLC) VALUES ("BASE");
+INSERT INTO outLC_param (outLC) VALUES ("CENTER");
+INSERT INTO outLC_param (outLC) VALUES ("BASE_MULT");
+INSERT INTO outLC_param (outLC) VALUES ("CENTER_MULT");
+
+
+
