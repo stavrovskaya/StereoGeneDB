@@ -389,6 +389,10 @@ class Parser:
 				else:
 					value = 5L
 				key = "outLC_id"
+			    if key == "noiseLevel":
+				value = str(int(float(values[i].strip())*100))
+				
+
 		
                 	    paramHash[key] = value
 	
@@ -573,7 +577,7 @@ class Parser:
 				continue
 
 			if ss[0].strip()=="noiseLevel":
-				paramHash["noiseLevel"] = ss[1].strip()
+				paramHash["noiseLevel"] = str(int(float(ss[1].strip())*100))
 				continue
 		
 			if ss[0].strip()=="maxNA":

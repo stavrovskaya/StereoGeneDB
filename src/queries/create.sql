@@ -68,13 +68,13 @@ CREATE TABLE  param (
   `bin` int(11) NOT NULL,
   `bpType_id` int(11) NOT NULL,
   `flankSize` int(11) NOT NULL,
-  `noiseLevel` float NOT NULL,
+  `noiseLevel` int(11) NOT NULL,
   `maxNA` int(11) NOT NULL,
   `maxZero` int(11) NOT NULL,
   `nShuffle` int(11) NOT NULL,
   `mapIv` varchar(50) COLLATE latin1_general_ci,
   `threshold` int(11) NOT NULL,
-  `outThreshold` float NOT NULL,
+  `outThreshold` int(11) NOT NULL,
   `outChrom` tinyint(1) NOT NULL,
   `intervals_id` int(11) NOT NULL,
   `lcscale_id` int(11) NOT NULL,
@@ -88,7 +88,7 @@ CREATE TABLE  param (
   CONSTRAINT `intervals_fk` FOREIGN KEY (`intervals_id`) REFERENCES `intervals_param` (`id`),
   CONSTRAINT `lcscale_fk` FOREIGN KEY (`lcscale_id`) REFERENCES `lcscale_param` (`id`),
   CONSTRAINT `outLC_fk` FOREIGN KEY (`outLC_id`) REFERENCES `outLC_param` (`id`)
- ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
+  ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
 
 CREATE TABLE  mark (
@@ -129,19 +129,22 @@ CREATE TABLE  tissue (
 CREATE TABLE devstage (
   `id` INTEGER  NOT NULL AUTO_INCREMENT,
   `devstage` VARCHAR(30)  COLLATE latin1_general_ci NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `devstage` (`devstage`)
 )
 ENGINE = InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
 CREATE TABLE track_path (
   `id` INTEGER  NOT NULL AUTO_INCREMENT,
   `track_path` VARCHAR(300)  COLLATE latin1_general_ci NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `track_path_unique` (`track_path`)
 )
 ENGINE = InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
 CREATE TABLE  track (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `track_name` VARCHAR(200)  COLLATE latin1_general_ci NOT NULL,
   `tissue_id` int(11) DEFAULT NULL,
   `mark_id` int(11) NOT NULL,
   `sample_id` int(11) NOT NULL,
@@ -154,6 +157,8 @@ CREATE TABLE  track (
   KEY `fk_sample` (`sample_id`),
   KEY `fk_lab` (`lab_id`),
   KEY `fk_devstage` (`devstage_id`),
+  KEY `fk_track_path` (`track_path_id`),
+  UNIQUE KEY `track_name_unique` (`track_name`, `track_path_id`),
   CONSTRAINT `fk_devstage` FOREIGN KEY (`devstage_id`) REFERENCES `devstage` (`id`),
   CONSTRAINT `fk_lab` FOREIGN KEY (`lab_id`) REFERENCES `lab` (`id`),
   CONSTRAINT `fk_mark` FOREIGN KEY (`mark_id`) REFERENCES `mark` (`id`),
@@ -193,6 +198,8 @@ CREATE TABLE  run (
   KEY `fk_track1` (`track1_id`),
   KEY `fk_track2` (`track2_id`),
   KEY `fk_param` (`param_id`),
+  KEY `version_key` (`version`),
+  UNIQUE KEY `run_unique` (`track1_id`, `track2_id`, `param_id`, `version`),
   CONSTRAINT `fk_param` FOREIGN KEY (`param_id`) REFERENCES `param` (`id`),
   CONSTRAINT `fk_track1` FOREIGN KEY (`track1_id`) REFERENCES `track` (`id`),
   CONSTRAINT `fk_track2` FOREIGN KEY (`track2_id`) REFERENCES `track` (`id`)
@@ -206,7 +213,7 @@ CREATE TABLE  bkg (
   `bkg_corr` mediumtext COLLATE latin1_general_ci NOT NULL,
   `bkg_dist_corr` text COLLATE latin1_general_ci NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `run_fk_constraint` (`run_id`),
+  UNIQUE KEY `run_unique` (`run_id`),
   CONSTRAINT `run_fk_constraint` FOREIGN KEY (`run_id`) REFERENCES `run` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
@@ -234,8 +241,8 @@ CREATE TABLE  chrom_stat (
   `cc` float NOT NULL,
   `count` int(11) NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `run_fk` (`run_id`),
   KEY `chrom_fk` (`chrom_id`),
+  UNIQUE KEY `run_unique` (`run_id`),
   CONSTRAINT `chrom_fk` FOREIGN KEY (`chrom_id`) REFERENCES `chrom` (`id`),
   CONSTRAINT `run_fk` FOREIGN KEY (`run_id`) REFERENCES `run` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
@@ -249,7 +256,7 @@ CREATE TABLE  corr_fg (
   `corr` float NOT NULL,
   `run_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `run_corr_fk` (`run_id`),
+  UNIQUE KEY `run_unique` (`run_id`),
   KEY `chrom_corr_fk` (`chrom_id`),
   CONSTRAINT `chrom_corr_fk` FOREIGN KEY (`chrom_id`) REFERENCES `chrom` (`id`),
   CONSTRAINT `run_corr_fk` FOREIGN KEY (`run_id`) REFERENCES `run` (`id`)
@@ -262,7 +269,7 @@ CREATE TABLE  dist_corr (
   `corr` float NOT NULL,
   `run_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `run_dist_fk` (`run_id`),
+  UNIQUE KEY `run_unique` (`run_id`),
   KEY `chrom_dist_fk` (`chrom_id`),
   CONSTRAINT `chrom_dist_fk` FOREIGN KEY (`chrom_id`) REFERENCES `chrom` (`id`),
   CONSTRAINT `run_dist_fk` FOREIGN KEY (`run_id`) REFERENCES `run` (`id`)

@@ -188,12 +188,12 @@ class DBloader:
 		cursor = self.cnx.cursor()
 
 		add_track_tiss = ("""INSERT INTO track 
-			       (tissue_id, mark_id, sample_id, lab_id, track_path_id)
-			       VALUES (%s, %s, %s, %s, %s)
+			       (track_name, tissue_id, mark_id, sample_id, lab_id, track_path_id)
+			       VALUES (%s, %s, %s, %s, %s, %s)
 			       ON DUPLICATE KEY UPDATE id= LAST_INSERT_ID(id)""")
 		add_track_devstage = ("""INSERT INTO track 
-			       (mark_id, sample_id, lab_id, devstage_id, track_path_id)
-			       VALUES (%s, %s, %s, %s, %s)
+			       (track_name, mark_id, sample_id, lab_id, devstage_id, track_path_id)
+			       VALUES (%s, %s, %s, %s, %s, %s)
 			       ON DUPLICATE KEY UPDATE id= LAST_INSERT_ID(id)""")
 
 		for track_name in tracks:
@@ -209,14 +209,14 @@ class DBloader:
 			tissue_id = "NULL"
 			if (track.tissue != None):
 				tissue_id = tissue_ids[track.tissue]
-				track_tuple = (tissue_id, mark_id, sample_id, lab_id, track_path_id)
+				track_tuple = (track_name, tissue_id, mark_id, sample_id, lab_id, track_path_id)
 				cursor.execute(add_track_tiss, track_tuple)
 				track_id = cursor.lastrowid
 
 			devstage_id = "NULL"
 			if (track.devstage != None):
 				devstage_id = devstage_ids[track.devstage] # was track.dev_stage
-				track_tuple = (mark_id, sample_id, lab_id, devstage_id, track_path_id)
+				track_tuple = (track_name, mark_id, sample_id, lab_id, devstage_id, track_path_id)
 				cursor.execute(add_track_devstage, track_tuple)
 				track_id = cursor.lastrowid
 			
@@ -361,7 +361,8 @@ class DBloader:
 
 		values = []
 		var_names = ",".join(var_list)
-		print("count comma: %d" % var_names.count(","))
+		var_select_names = "=%s and ".join(var_list) + "=%s"
+		
 		var_values = ""
 		ss = []
 		for key in var_list:
@@ -373,11 +374,22 @@ class DBloader:
 		var_values = ",".join(ss)
 
 				
+		check_param = ("SELECT id "
+				"FROM param "
+				"WHERE " + var_select_names
+		)
 		add_param = ("INSERT INTO param" 
 			       "(" + var_names + ")" 
 			       "VALUES (" + var_values + ")")
-		print(add_param)
+		print(var_select_names)
+		print(var_names)
+		print(values)
 		
+		#check if exist
+		cursor.execute(check_param, values)
+		param_id = cursor.fetchone()
+		if (param_id != None):
+			return(param_id[0])
 		cursor.execute(add_param, values)
 		param_id = cursor.lastrowid
  		
@@ -396,7 +408,8 @@ class DBloader:
 
 		add_run = ("""INSERT INTO run 
 			 	(track1_id, track2_id, param_id, prog_run_id, nFgr, nBkg, Fg_Corr, Fg_av_Corr, FgCorr_sd, Bg_Corr, Bg_av_Corr, BgCorr_sd, mann_z, p_value, P_corr, version)
-				 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""")
+				 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+				 ON DUPLICATE KEY UPDATE id= LAST_INSERT_ID(id)""")
 		track1_id = track_ids[run.track1_id]
 		track2_id = track_ids[run.track2_id]
 
