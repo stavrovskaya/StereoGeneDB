@@ -142,6 +142,19 @@ CREATE TABLE track_path (
 )
 ENGINE = InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
+
+CREATE TABLE confounder (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `confounder_name` VARCHAR(45) NOT NULL,
+  `confounder_path_id` INT NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `conf_path_key_idx` (`confounder_path_id` ASC),
+  CONSTRAINT `conf_path_key`
+    FOREIGN KEY (`confounder_path_id`)
+    REFERENCES `track_path` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION);
+
 CREATE TABLE  track (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `track_name` VARCHAR(200)  COLLATE latin1_general_ci NOT NULL,
@@ -151,6 +164,7 @@ CREATE TABLE  track (
   `lab_id` int(11) DEFAULT NULL,
   `devstage_id` int(11) DEFAULT NULL,
   `track_path_id`  int(11) NOT NULL,
+  `confounder_id` int(11) DEFAULT NULL, 
   PRIMARY KEY (`id`),
   KEY `fk_tissue` (`tissue_id`),
   KEY `fk_mark` (`mark_id`),
@@ -164,7 +178,8 @@ CREATE TABLE  track (
   CONSTRAINT `fk_mark` FOREIGN KEY (`mark_id`) REFERENCES `mark` (`id`),
   CONSTRAINT `fk_sample` FOREIGN KEY (`sample_id`) REFERENCES `sample` (`id`),
   CONSTRAINT `fk_tissue` FOREIGN KEY (`tissue_id`) REFERENCES `tissue` (`id`),
-  CONSTRAINT `fk_track_path` FOREIGN KEY (`track_path_id`) REFERENCES `track_path` (`id`)
+  CONSTRAINT `fk_track_path` FOREIGN KEY (`track_path_id`) REFERENCES `track_path` (`id`),
+  CONSTRAINT `fk_confounder` FOREIGN KEY (`confounder_id`) REFERENCES `confounder` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
 

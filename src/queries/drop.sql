@@ -13,6 +13,7 @@ DROP TABLE  outLC_param;
 DROP TABLE  complFg_param; 
 DROP TABLE  kernelType_param;
 DROP TABLE  track;
+DROP TABLE  confounder;
 DROP TABLE  track_path;
 DROP TABLE  chrom;
 DROP TABLE  devstage;
