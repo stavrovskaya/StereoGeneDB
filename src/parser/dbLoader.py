@@ -23,7 +23,7 @@ class DBloader:
 		"""
 		Connect
 		"""
-        	print("in connect: host=%s, port=%s, user=%s, password=%s, db=%s"%(self.host, self.port, self.user, self.pwd, self.db))
+		print("in connect: host=%s, port=%s, user=%s, password=%s, db=%s"%(self.host, self.port, self.user, self.pwd, self.db))
 		self.cnx = MySQLdb.connect(host=self.host, port = self.port, user=self.user, passwd=self.pwd, db=self.db)
 		
 	def disconnect(self):
@@ -34,9 +34,9 @@ class DBloader:
 			self.cnx.close()
 				
 	def loadTrackPath(self, path):
-	        """
-        	Load path (input track) into db
-	        """
+		"""
+		Load path (input track) into db
+		"""
 		print(path)
 		cursor = self.cnx.cursor()
 		add_track_path = ("""INSERT INTO track_path 
@@ -51,7 +51,30 @@ class DBloader:
 		cursor.close()
 
 		return(track_path_id)
-    
+		
+	def loadTrackPaths(self, trackPaths):
+		"""
+		Load set of paths (input track) into db
+		"""
+		ids = {}
+		
+		cursor = self.cnx.cursor()
+		add_track_path = ("""INSERT INTO track_path 
+			       (track_path) 
+			       VALUES (%s)
+			       ON DUPLICATE KEY UPDATE id= LAST_INSERT_ID(id)""")
+		
+		for path in trackPaths:
+			print(path)
+			cursor.execute(add_track_path, [path])
+			track_path_id = cursor.lastrowid
+			ids[path] = track_path_id
+		
+		self.cnx.commit()
+		cursor.close()
+		
+		return(ids)
+		
 	def loadLabs(self, labs):
 		"""
 		Load laboratories into lab table
@@ -178,7 +201,7 @@ class DBloader:
 		cursor.close()
 
 		return(ids)
-	def loadTracks(self, tracks, track_path_id, mark_ids, sample_ids, lab_ids, tissue_ids=None, devstage_ids=None):
+	def loadTracks(self, tracks, track_path_ids, mark_ids, sample_ids, lab_ids, tissue_ids=None, devstage_ids=None):
 		"""
 		Load tracks into track table
 		"""
@@ -196,13 +219,15 @@ class DBloader:
 			       VALUES (%s, %s, %s, %s, %s, %s)
 			       ON DUPLICATE KEY UPDATE id= LAST_INSERT_ID(id)""")
 
-		for track_name in tracks:
+		for track_name_path in tracks:
 			track_id=None
 			
-			track = tracks[track_name]
+			track = tracks[track_name_path]
+			track_name = track_name_path[1]
 			mark_id = mark_ids[track.mark]
 			sample_id = sample_ids[track.sample]
 			lab_id = lab_ids[track.lab]
+			track_path_id = track_path_ids[track.trackPath]
 			
 			
 
@@ -223,7 +248,7 @@ class DBloader:
 
 			track.track_id = track_id
 
-			ids[track_name] = track_id
+			ids[track_name_path] = track_id
 
 		self.cnx.commit()
 		cursor.close()
@@ -381,9 +406,7 @@ class DBloader:
 		add_param = ("INSERT INTO param" 
 			       "(" + var_names + ")" 
 			       "VALUES (" + var_values + ")")
-		print(var_select_names)
-		print(var_names)
-		print(values)
+
 		
 		#check if exist
 		cursor.execute(check_param, values)
@@ -402,18 +425,18 @@ class DBloader:
 		"""
 		Load all about the run into corr_run table
 		"""
-		
+
 		cursor = self.cnx.cursor()
 #		nFgr, nBkg, Fg_Corr, Fg_av_Corr, FgCorr_sd, Bg_Corr, Bg_av_Corr, BgCorr_sd, mann_z, p_value, pc
 
 		add_run = ("""INSERT INTO run 
-			 	(track1_id, track2_id, param_id, prog_run_id, nFgr, nBkg, Fg_Corr, Fg_av_Corr, FgCorr_sd, Bg_Corr, Bg_av_Corr, BgCorr_sd, mann_z, p_value, P_corr, version)
-				 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+			 	(track1_id, track2_id, param_id, prog_run_id, nFgr, nBkg, Fg_Corr, Fg_av_Corr, FgCorr_sd, Bg_Corr, Bg_av_Corr, BgCorr_sd, mann_z, p_value, date)
+				 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 				 ON DUPLICATE KEY UPDATE id= LAST_INSERT_ID(id)""")
 		track1_id = track_ids[run.track1_id]
 		track2_id = track_ids[run.track2_id]
 
-		cursor.execute(add_run, (track1_id, track2_id, param_id, run.prog_run_id, run.nFgr, run.nBkg, run.Fg_Corr, run.Fg_av_Corr, run.FgCorr_sd, run.Bg_Corr, run.Bg_av_Corr, run.BgCorr_sd, run.mann_z, run.p_value, run.P_corr, run.version))
+		cursor.execute(add_run, (track1_id, track2_id, param_id, run.prog_run_id, run.nFgr, run.nBkg, run.Fg_Corr, run.Fg_av_Corr, run.FgCorr_sd, run.Bg_Corr, run.Bg_av_Corr, run.BgCorr_sd, run.mann_z, run.p_value, run.date))
 		run_id = cursor.lastrowid
  		
 				
@@ -424,7 +447,7 @@ class DBloader:
 
 		return(run_id)
 
-	def loadDist(self, chrom_dist_hash, run_id, chrom_ids, poses):
+	def loadDist(self, chrom_dist_hash, run_id, chrom_ids):
 		"""
 		Load distance correlation into dist_corr table
 		"""
@@ -436,15 +459,18 @@ class DBloader:
 			       VALUES (%s, %s, %s, %s)
 			       ON DUPLICATE KEY UPDATE id= LAST_INSERT_ID(id)""")		
 		for chrom in chrom_dist_hash:
+			
 			chrom_id = chrom_ids[chrom]
-			corr = chrom_dist_hash[chrom]
-			for i in range(len(corr)):
-				cursor.execute(add_dist, (chrom_id, poses[i], corr[i], run_id))
-			dist_id = cursor.lastrowid
-			dist_ids.append(dist_id)
+			corr_list = chrom_dist_hash[chrom]
+			for corr_data in corr_list:
+				pose = corr_data[0]
+				corr = corr_data[1]
+				cursor.execute(add_dist, (chrom_id, pose, corr, run_id))
+				dist_id = cursor.lastrowid
+				dist_ids.append(dist_id)
 		
 		self.cnx.commit()
 		cursor.close()
 
-		return(dist_ids)		
+		return(dist_ids)
 	

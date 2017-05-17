@@ -1,10 +1,11 @@
 from dbLoader import DBloader
 from stereoGeneParser import Parser
+import sys
 
 
 
 #====Parse function============
-def parseStereoGeneResultFromStatistics(organism, assembly, chromLengthFile, statFile, filesInfoFile, paramFile, trackPath, resultPath, host, user, pwd, db, port):
+def parseStereoGeneResultFromStatistics(organism, assembly, chromLengthFile, statFile, filesInfoFile, paramFile, host, user, pwd, db, port):
 	"""
 	Load result into database
 	"""
@@ -17,9 +18,8 @@ def parseStereoGeneResultFromStatistics(organism, assembly, chromLengthFile, sta
 	marks = []
 	samples = []
 
+
 #Parse pipeline:
-#load trackPath
-	track_path_id = dbloader.loadTrackPath(trackPath)
 #load organism
 	org_id = dbloader.loadOrg(organism, assembly)
 	
@@ -27,18 +27,25 @@ def parseStereoGeneResultFromStatistics(organism, assembly, chromLengthFile, sta
 #load chrom lengths to db
 	chroms = parser.parseChrom(chromLengthFile)	
 	chrom_ids = dbloader.loadChroms(org_id, chroms)
-	
-#read params files
+
+#read files info file
+	fileInfoHash = parser.parseInputFileInfoTable(filesInfoFile)
+
+#load params
+#read params file
 #load params to db
-	runParam = parser.parseParam(paramFile)
+	runParam, runTrackPaths, runResultPaths = parser.parseParam(paramFile)
 	paramIdHash = {}
 	for runId in runParam:
 		paramIdHash[runId] = dbloader.loadParams(runParam[runId])
 	
-#read files info file
-	fileInfoHash = parser.parseInputFileInfoTable(filesInfoFile)
 #read statistics file
-	tracks, runList, labs, tissues, devstages, marks, samples = parser.parseStatistic(statFile, resultPath, fileInfoHash)
+	tracks, runList, trackPaths, labs, tissues, devstages, marks, samples = parser.parseStatistic(statFile, runTrackPaths, runResultPaths, fileInfoHash)
+
+
+#load trackPaths
+	track_path_ids = dbloader.loadTrackPaths(trackPaths)
+
 #load labs
 	lab_ids = dbloader.loadLabs(labs)
 #load tissues
@@ -52,7 +59,7 @@ def parseStereoGeneResultFromStatistics(organism, assembly, chromLengthFile, sta
 	sample_ids = dbloader.loadSamples(samples)
 	print(sample_ids)
 #load tracks
-	track_ids = dbloader.loadTracks(tracks, track_path_id, mark_ids, sample_ids, lab_ids, tissue_ids, devstage_ids)
+	track_ids = dbloader.loadTracks(tracks, track_path_ids, mark_ids, sample_ids, lab_ids, tissue_ids, devstage_ids)
 #	for each run
 	for run in runList:	
 #		load param
@@ -72,9 +79,11 @@ def parseStereoGeneResultFromStatistics(organism, assembly, chromLengthFile, sta
 
 #		load dist
 		dist_file = run.run_file_name + ".dist"		
-		poses, chrom_dist_hash, bg_dist = parser.parse_dist(dist_file)
+		chrom_dist_hash, bg_dist = parser.parse_dist(dist_file)
 		
-		dbloader.loadDist(chrom_dist_hash, run_id, chrom_ids, poses)
+
+		
+		dbloader.loadDist(chrom_dist_hash, run_id, chrom_ids)
 
 #		load bg
 		bg_fname = run.run_file_name + ".bkg"	
@@ -104,12 +113,8 @@ parser.add_argument("-st", "--statFile",  type=str,
                     help="Path to the of statistics file")
 parser.add_argument("-prm", "--paramFile", type=str,
                     help="Path to the params file")
-parser.add_argument("-rp", "--resultPath",  type=str,
-                    help="Path to result directory")
 parser.add_argument("-fi", "--fileInfo",  type=str,
                     help="Path to track information file")
-parser.add_argument("-tp", "--trackPath",  type=str,
-                    help="Path to initial tracks directory")
 parser.add_argument("-ho", "--host",  type=str,
                     help="Database host")
 parser.add_argument("-d", "--db",  type=str,
@@ -126,7 +131,7 @@ args = parser.parse_args()
 print(args)
 
 
-parseStereoGeneResultFromStatistics(args.organism, args.assembly, args.chromLengthFile, args.statFile, args.fileInfo,  args.paramFile, args.trackPath, args.resultPath, args.host, args.user, args.pwd, args.db, args.port)
+parseStereoGeneResultFromStatistics(args.organism, args.assembly, args.chromLengthFile, args.statFile, args.fileInfo,  args.paramFile, args.host, args.user, args.pwd, args.db, args.port)
 
 
 

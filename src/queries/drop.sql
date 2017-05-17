@@ -8,7 +8,6 @@ DROP TABLE  dist_output_param;
 DROP TABLE  outWig_param;
 DROP TABLE  bpType_param;
 DROP TABLE  intervals_param;
-DROP TABLE  lcscale_param;
 DROP TABLE  outLC_param;
 DROP TABLE  complFg_param; 
 DROP TABLE  kernelType_param;
