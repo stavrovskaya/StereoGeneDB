@@ -160,6 +160,7 @@ class DBloader:
 		return(ids)
 
 	def loadSamples(self, samples):
+		print(samples)
 		"""
 		Load sample (replica id) into sample table
 		"""
@@ -218,6 +219,14 @@ class DBloader:
 			       (track_name, mark_id, sample_id, lab_id, devstage_id, track_path_id)
 			       VALUES (%s, %s, %s, %s, %s, %s)
 			       ON DUPLICATE KEY UPDATE id= LAST_INSERT_ID(id)""")
+		add_track_tiss_no_sample = ("""INSERT INTO track 
+			       (track_name, tissue_id, mark_id, lab_id, track_path_id)
+			       VALUES (%s, %s, %s, %s, %s)
+			       ON DUPLICATE KEY UPDATE id= LAST_INSERT_ID(id)""")
+		add_track_devstage_no_sample = ("""INSERT INTO track 
+			       (track_name, mark_id, lab_id, devstage_id, track_path_id)
+			       VALUES (%s, %s, %s, %s, %s)
+			       ON DUPLICATE KEY UPDATE id= LAST_INSERT_ID(id)""")
 
 		for track_name_path in tracks:
 			track_id=None
@@ -225,7 +234,7 @@ class DBloader:
 			track = tracks[track_name_path]
 			track_name = track_name_path[1]
 			mark_id = mark_ids[track.mark]
-			sample_id = sample_ids[track.sample]
+			sample_id = sample_ids.get(track.sample, "NULL")
 			lab_id = lab_ids[track.lab]
 			track_path_id = track_path_ids[track.trackPath]
 			
@@ -234,16 +243,26 @@ class DBloader:
 			tissue_id = "NULL"
 			if (track.tissue != None):
 				tissue_id = tissue_ids[track.tissue]
-				track_tuple = (track_name, tissue_id, mark_id, sample_id, lab_id, track_path_id)
-				cursor.execute(add_track_tiss, track_tuple)
-				track_id = cursor.lastrowid
-
+				if (sample_id != "NULL"):
+					track_tuple = (track_name, tissue_id, mark_id, sample_id, lab_id, track_path_id)
+					cursor.execute(add_track_tiss, track_tuple)
+					track_id = cursor.lastrowid
+				else:
+					track_tuple = (track_name, tissue_id, mark_id, lab_id, track_path_id)
+					cursor.execute(add_track_tiss_no_sample, track_tuple)
+					track_id = cursor.lastrowid
+				
 			devstage_id = "NULL"
 			if (track.devstage != None):
 				devstage_id = devstage_ids[track.devstage] # was track.dev_stage
-				track_tuple = (track_name, mark_id, sample_id, lab_id, devstage_id, track_path_id)
-				cursor.execute(add_track_devstage, track_tuple)
-				track_id = cursor.lastrowid
+				if (sample_id != "NULL"):
+					track_tuple = (track_name, mark_id, sample_id, lab_id, devstage_id, track_path_id)
+					cursor.execute(add_track_devstage, track_tuple)
+					track_id = cursor.lastrowid
+				else:
+					track_tuple = (track_name, mark_id, lab_id, devstage_id, track_path_id)
+					cursor.execute(add_track_devstage_no_sample, track_tuple)
+					track_id = cursor.lastrowid
 			
 
 			track.track_id = track_id

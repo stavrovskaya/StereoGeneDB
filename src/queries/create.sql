@@ -153,7 +153,7 @@ CREATE TABLE  track (
   `track_name` VARCHAR(200)  COLLATE latin1_general_ci NOT NULL,
   `tissue_id` int(11) DEFAULT NULL,
   `mark_id` int(11) NOT NULL,
-  `sample_id` int(11) NOT NULL,
+  `sample_id` int(11) DEFAULT NULL,
   `lab_id` int(11) DEFAULT NULL,
   `devstage_id` int(11) DEFAULT NULL,
   `track_path_id`  int(11) NOT NULL,

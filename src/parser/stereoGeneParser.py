@@ -103,7 +103,7 @@ class Parser:
                                 f_hash[name] = value
 
                         print(f_hash.get("cell", None), f_hash.get("devstage", None),
-                              f_hash["antibody"], f_hash["lab"],
+                              f_hash["antibody"], f_hash.get("lab", None),
                               f_hash.get("replicate", None), )
                         file_info[file_name] = f_hash
                 
@@ -117,7 +117,7 @@ class Parser:
 		
 		info = fileInfoHash[track_id]
 		
-		return Track(trackPath, info["antibody"], info["replicate"], info["lab"], info.get("cell", None), info.get("devstage", None))
+		return Track(trackPath, info["antibody"], info.get("replicate", None), info.get("lab", "Unknown"), info.get("cell", None), info.get("devstage", None))
 	
 	def parseStatistic(self, fname, trackPathHash, resultPathHash, fileInfoHash):
 		"""
@@ -167,7 +167,8 @@ class Parser:
 				if (track1.devstage != None):
 					devstages.add(track1.devstage)
 				marks.add(track1.mark)
-				samples.add(track1.sample)
+				if (track1.sample != None):
+					samples.add(track1.sample)
 				tracks[track1_id] = track1
 			
 			#read track2, put to the list
@@ -183,7 +184,8 @@ class Parser:
 					devstages.add(track2.devstage)
 
 				marks.add(track2.mark)
-				samples.add(track2.sample)
+				if (track2.sample != None):
+					samples.add(track2.sample)
 				tracks[track2_id] = track2
 			#read other params
 			
@@ -310,6 +312,8 @@ class Parser:
 				abs_path = abs_path[0:r_ind]
 			if dir.startswith("./"):
 				dir = dir[2:]
+			if dir.endswith("/"):
+				dir = dir[0:(len(dir)-1)]
 			return(abs_path + "/" + dir)
 #id    	trackPath           	resPath             	map                 	mapIv       	pcorProfile         	NA	maxNA 	maxZer	interv	strand	compl 	step	bpType	wSize 	wStep 	flank 	noise 	kernel	Kern-Sgm	kern-Sh 	nShuffle	MaxShfl 	threshold
 	def parseParam(self, fname):
