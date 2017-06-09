@@ -142,11 +142,21 @@ CREATE TABLE confounder (
   `confounder_path_id` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `conf_path_key_idx` (`confounder_path_id` ASC),
-  CONSTRAINT `conf_path_key`
-    FOREIGN KEY (`confounder_path_id`)
-    REFERENCES `track_path` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION);
+  CONSTRAINT `conf_path_key` FOREIGN KEY (`confounder_path_id`) REFERENCES `track_path` (`id`))
+  ENGINE = InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
+
+CREATE TABLE confounder_member (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `confounder_id` INT NOT NULL,
+  `member_name` VARCHAR(45) NOT NULL,
+  `member_path_id` INT NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `conf_key_idx` (`confounder_id` ASC),
+  CONSTRAINT `member_confounder_key` FOREIGN KEY (`confounder_id`) REFERENCES `confounder` (`id`), 
+  CONSTRAINT `member_path_key` FOREIGN KEY (`member_path_id`) REFERENCES `track_path` (`id`) 
+  )
+  ENGINE = InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
+
 
 CREATE TABLE  track (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -254,15 +264,13 @@ CREATE TABLE  chrom_stat (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
 
-CREATE TABLE  corr_fg (
+CREATE TABLE  fg (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `chrom_id` int(11) NOT NULL,
-  `start` int(11) NOT NULL,
-  `end` int(11) NOT NULL,
-  `corr` float NOT NULL,
+  `corr` text COLLATE latin1_general_ci NOT NULL,
   `run_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `run_unique` (`run_id`, `chrom_id`, `start`),
+  UNIQUE KEY `run_unique` (`run_id`, `chrom_id`),
   KEY `chrom_corr_fk` (`chrom_id`),
   CONSTRAINT `chrom_corr_fk` FOREIGN KEY (`chrom_id`) REFERENCES `chrom` (`id`),
   CONSTRAINT `run_corr_fk` FOREIGN KEY (`run_id`) REFERENCES `run` (`id`)

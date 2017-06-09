@@ -134,6 +134,3 @@ print(args)
 parseStereoGeneResultFromStatistics(args.organism, args.assembly, args.chromLengthFile, args.statFile, args.fileInfo,  args.paramFile, args.host, args.user, args.pwd, args.db, args.port)
 
 
-
-
-

@@ -1,6 +1,6 @@
 DROP TABLE  bkg; 
 DROP TABLE  chrom_stat;
-DROP TABLE  corr_fg;
+DROP TABLE  fg;
 DROP TABLE  dist_corr;
 DROP TABLE  run;
 DROP TABLE  param;
@@ -12,6 +12,7 @@ DROP TABLE  outLC_param;
 DROP TABLE  complFg_param; 
 DROP TABLE  kernelType_param;
 DROP TABLE  track;
+DROP TABLE  confounder_member;
 DROP TABLE  confounder;
 DROP TABLE  track_path;
 DROP TABLE  chrom;

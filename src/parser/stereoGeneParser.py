@@ -291,14 +291,17 @@ class Parser:
 	def parseFg(self, fname):
 		"""
 		Parse foreground file
-		Return list of (chrom, start, end, score) dicts
+		Return list of (chrom, score list) dicts
 		"""
 		fin = open(fname)
-		fg = []	
+		fg = {}	
 
 		for line in fin:
 			chrom, start, end, score = line.split()
-			fg.append({'chrom':chrom, 'start':start, 'end':end, 'score':score})
+			#fg.append({'chrom':chrom, 'start':start, 'end':end, 'score':score})
+			scores = fg.get(chrom, [])
+			scores.append(score)
+			fg[chrom] = scores
 
 		fin.close()
 		return(fg)

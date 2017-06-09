@@ -372,19 +372,18 @@ class DBloader:
 
 	def loadFg(self, run_id, fg_corr, chroms):
 		"""
-		Load foreground by windows into corr_corr_fg table
+		Load foreground by windows into fg table
 		"""
 		fg_ids = []
 
 		cursor = self.cnx.cursor()
 
-		add_fg = ("""INSERT INTO corr_fg 
-			       (run_id, chrom_id, start, end, corr) 
-			       VALUES (%s, %s, %s, %s, %s)
+		add_fg = ("""INSERT INTO fg 
+			       (run_id, chrom_id, corr) 
+			       VALUES (%s, %s, %s)
 			       ON DUPLICATE KEY UPDATE id= LAST_INSERT_ID(id)""")		
-		for fg in fg_corr:
-			chrom = fg['chrom']
-			cursor.execute(add_fg, (run_id, chroms[chrom], fg['start'], fg['end'], fg['score']))
+		for chrom in fg_corr:
+			cursor.execute(add_fg, (run_id, chroms[chrom], "\t".join(fg_corr[chrom])))
 			fg_id = cursor.lastrowid
 			fg_ids.append(fg_id)
 		
