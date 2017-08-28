@@ -34,14 +34,30 @@ def parseStereoGeneResultFromStatistics(organism, assembly, chromLengthFile, sta
 #load params
 #read params file
 #load params to db
-	runParam, runTrackPaths, runResultPaths = parser.parseParam(paramFile)
+	runParam, runTrackPaths, runResultPaths, confounderNames = parser.parseParam(paramFile)
 	paramIdHash = {}
 	for runId in runParam:
 		paramIdHash[runId] = dbloader.loadParams(runParam[runId])
+		
 	
 #read statistics file
-	tracks, runList, trackPaths, labs, tissues, devstages, marks, samples = parser.parseStatistic(statFile, runTrackPaths, runResultPaths, fileInfoHash)
+	tracks, runList, trackPaths, labs, tissues, devstages, marks, samples, confounders = parser.parseStatistic(statFile, runTrackPaths, runResultPaths, fileInfoHash, confounderNames)
 
+#load confounders, if exist
+	confounderIdHash = None
+	confounderPath = paramFile[0:paramFile.rfind("/") + 1]
+	if len(confounders)!=0:
+		confounderIdHash = {}
+		for confounder in confounders:
+			confounderName, confounderMemberPath = confounder
+			confounderMembers, memberPaths = parser.parseConfounder(confounderPath + confounderName + ".cvr", confounderMemberPath)
+			memberPathIds = dbloader.loadTrackPaths(memberPaths)
+			
+			confounderId = dbloader.loadConfounder(confounderName)
+			
+			dbloader.loadConfounderMembers(confounderId, confounderMembers, memberPathIds)
+			
+			confounderIdHash[confounderName] = confounderId 
 
 #load trackPaths
 	track_path_ids = dbloader.loadTrackPaths(trackPaths)
@@ -65,17 +81,17 @@ def parseStereoGeneResultFromStatistics(organism, assembly, chromLengthFile, sta
 #		load param
 		param_id = paramIdHash[run.prog_run_id]
 #		load run statistic
-		run_id = dbloader.loadRun(run, track_ids, param_id)
+		run_id = dbloader.loadRun(run, track_ids, param_id, confounderIdHash)
 
 #		get run name to make chrom file name
 		chrom_file = run.run_file_name + ".chrom"
 
 #		read chrom statistic
 
-		chrom_stat = parser.parseChromStat(chrom_file)
+#		chrom_stat = parser.parseChromStat(chrom_file)
 
 #		load chrom statistic
-		chrom_stat_id = dbloader.loadChromStat(run_id, chrom_stat, chrom_ids)
+#		chrom_stat_id = dbloader.loadChromStat(run_id, chrom_stat, chrom_ids)
 
 #		load dist
 		dist_file = run.run_file_name + ".dist"		

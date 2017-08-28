@@ -439,7 +439,7 @@ class DBloader:
 		
 		return(param_id)
 
-	def loadRun(self, run, track_ids, param_id):
+	def loadRun(self, run, track_ids, param_id, confounder_ids):
 		"""
 		Load all about the run into corr_run table
 		"""
@@ -448,14 +448,22 @@ class DBloader:
 #		nFgr, nBkg, Fg_Corr, Fg_av_Corr, FgCorr_sd, Bg_Corr, Bg_av_Corr, BgCorr_sd, mann_z, p_value, pc
 
 		add_run = ("""INSERT INTO run 
+			 	(track1_id, track2_id, param_id, prog_run_id, nFgr, nBkg, Fg_Corr, Fg_av_Corr, FgCorr_sd, Bg_Corr, Bg_av_Corr, BgCorr_sd, mann_z, p_value, date, confounder_id)
+				 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+				 ON DUPLICATE KEY UPDATE id= LAST_INSERT_ID(id)""")
+		add_run_no_confounder = ("""INSERT INTO run 
 			 	(track1_id, track2_id, param_id, prog_run_id, nFgr, nBkg, Fg_Corr, Fg_av_Corr, FgCorr_sd, Bg_Corr, Bg_av_Corr, BgCorr_sd, mann_z, p_value, date)
 				 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 				 ON DUPLICATE KEY UPDATE id= LAST_INSERT_ID(id)""")
 		track1_id = track_ids[run.track1_id]
 		track2_id = track_ids[run.track2_id]
-
-		cursor.execute(add_run, (track1_id, track2_id, param_id, run.prog_run_id, run.nFgr, run.nBkg, run.Fg_Corr, run.Fg_av_Corr, run.FgCorr_sd, run.Bg_Corr, run.Bg_av_Corr, run.BgCorr_sd, run.mann_z, run.p_value, run.date))
-		run_id = cursor.lastrowid
+		if run.confounder_id is None:
+			cursor.execute(add_run_no_confounder, (track1_id, track2_id, param_id, run.prog_run_id, run.nFgr, run.nBkg, run.Fg_Corr, run.Fg_av_Corr, run.FgCorr_sd, run.Bg_Corr, run.Bg_av_Corr, run.BgCorr_sd, run.mann_z, run.p_value, run.date))
+			run_id = cursor.lastrowid
+ 		else:
+			confounder_id = confounder_ids[run.confounder_id]
+			cursor.execute(add_run, (track1_id, track2_id, param_id, run.prog_run_id, run.nFgr, run.nBkg, run.Fg_Corr, run.Fg_av_Corr, run.FgCorr_sd, run.Bg_Corr, run.Bg_av_Corr, run.BgCorr_sd, run.mann_z, run.p_value, run.date, confounder_id))
+			run_id = cursor.lastrowid
  		
 				
 	
@@ -491,4 +499,48 @@ class DBloader:
 		cursor.close()
 
 		return(dist_ids)
+	def loadConfounder(self, confounder_name):
 	
+		"""
+		Load confounder name into db
+		"""
+		print(confounder_name)
+		cursor = self.cnx.cursor()
+		add_confounder = ("""INSERT INTO confounder 
+			       (confounder_name) 
+			       VALUES (%s)
+			       ON DUPLICATE KEY UPDATE id= LAST_INSERT_ID(id)""")
+		
+		cursor.execute(add_confounder, [confounder_name])
+		confounder_id = cursor.lastrowid
+		
+		self.cnx.commit()
+		cursor.close()
+
+		return(confounder_id)
+		
+	def loadConfounderMembers(self, confounder_id, confounder_members, member_path_ids):
+	
+		"""
+		Load confounder name into db
+		"""
+		member_ids = []
+		print("confounder_members=" + str(confounder_members))
+
+		cursor = self.cnx.cursor()
+		add_member = ("""INSERT INTO confounder_member 
+			       (confounder_id, member_name, member_path_id, eigen_value) 
+			       VALUES (%s, %s, %s, %s)
+			       ON DUPLICATE KEY UPDATE id= LAST_INSERT_ID(id)""")		
+		for member_name in confounder_members:
+			member = confounder_members[member_name]
+			eigen_value = str(int(100*member.eigenValue))
+			member_path_id = member_path_ids[member.path]
+			cursor.execute(add_member, (confounder_id, member_name, member_path_id, eigen_value))
+			member_id = cursor.lastrowid
+			member_ids.append(member_id)
+		
+		self.cnx.commit()
+		cursor.close()
+
+		return(member_ids)

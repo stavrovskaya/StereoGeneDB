@@ -1,5 +1,4 @@
 DROP TABLE  bkg; 
-DROP TABLE  chrom_stat;
 DROP TABLE  fg;
 DROP TABLE  dist_corr;
 DROP TABLE  run;

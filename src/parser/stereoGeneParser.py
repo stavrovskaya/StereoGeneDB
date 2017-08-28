@@ -6,29 +6,44 @@ class Run:
 	"""
 	All about the run class
 	"""
-	def __init__(self, resPath, track1_id, track2_id, prog_run_id, nFgr, nBkg, Fg_Corr, Fg_av_Corr, FgCorr_sd, Bg_Corr, Bg_av_Corr, BgCorr_sd, mann_Z, p_value, date):
+	def __init__(self, resPath, track1_id, track2_id, prog_run_id, nFgr, nBkg, Fg_Corr, Fg_av_Corr, FgCorr_sd, Bg_Corr, Bg_av_Corr, BgCorr_sd, mann_Z, p_value, date, confounder_id):
 		"""
 		Basic constructor
 		"""
 		self.table_id = None
 		
 		self.track1_id = track1_id
+		
 		self.track2_id = track2_id
+		
 		self.prog_run_id = prog_run_id
+		
 		self.nFgr = nFgr
+		
 		self.nBkg = nBkg
+		
 		self.Fg_Corr = Fg_Corr
+		
 		self.Fg_av_Corr = Fg_av_Corr
-	        self.FgCorr_sd = FgCorr_sd
-        	self.Bg_Corr = Bg_Corr
-	        self.Bg_av_Corr = Bg_av_Corr
-        	self.BgCorr_sd = BgCorr_sd
+	    
+		self.FgCorr_sd = FgCorr_sd
+        
+		self.Bg_Corr = Bg_Corr
+	    
+		self.Bg_av_Corr = Bg_av_Corr
+        
+		self.BgCorr_sd = BgCorr_sd
+		
 		self.mann_z = mann_Z
+		
 		self.p_value = p_value
+		
 		self.date = date
 		
+		
 		self.run_file_name = self.getRunFile(track1_id[1], track2_id[1], resPath)
-
+		
+		self.confounder_id = confounder_id
 		
 	def getRunFile(self, track1, track2, path):
 		"""
@@ -76,6 +91,14 @@ class Param:
 	"""
 	def __init__(self, paramHash):
 		self.paramHash = paramHash
+class ConfounderMember:
+	"""
+	Class to store the confounder member
+	"""
+	def __init__(self, name, path, eigenValue):
+		self.name = name
+		self.path = path
+		self.eigenValue = eigenValue
 
 class Parser:
 	"""
@@ -95,8 +118,12 @@ class Parser:
                 for line in fin:
                         ss = line.split("\t")
                         file_name = ss[0]
+                        ind = file_name.rfind(".")
+                        file_name = file_name[0:ind]
                         print("=====\n" + file_name)
+                        print(ss[1])
                         features = ss[1].split(";")
+                        print(features)
                         f_hash = {}
                         for f in features:
                                 name, value = f.strip().split("=")
@@ -114,12 +141,13 @@ class Parser:
 		"""
 		Return object of class Track
 		"""
-		
-		info = fileInfoHash[track_id]
+		ind = track_id.rfind(".")
+		track_id_name = track_id[0:ind]
+		info = fileInfoHash[track_id_name]
 		
 		return Track(trackPath, info["antibody"], info.get("replicate", None), info.get("lab", "Unknown"), info.get("cell", None), info.get("devstage", None))
 	
-	def parseStatistic(self, fname, trackPathHash, resultPathHash, fileInfoHash):
+	def parseStatistic(self, fname, trackPathHash, resultPathHash, fileInfoHash, confounderHash):
 		"""
 		Parse statistic file
 		param_id, resultPath are needed to form Run objects
@@ -141,6 +169,7 @@ class Parser:
 		devstages = set()
 		marks = set()
 		samples = set()
+		confounders = set()
 	
 		for line in fin:
 			if line.startswith("id"):
@@ -187,13 +216,17 @@ class Parser:
 				if (track2.sample != None):
 					samples.add(track2.sample)
 				tracks[track2_id] = track2
+			confounder = confounderHash.get(prog_run_id, None)
+			if not confounder is None:
+				confounderMemberPath = trackPathHash[prog_run_id].replace(confounder+".proj/", "")
+				confounders.add((confounder, confounderMemberPath))
 			#read other params
 			
 			runList.append(Run(resultPath, track1_id, track2_id, prog_run_id, data["nFgr"], data["nBkg"], data["Fg_Corr"], data["Fg_av_Corr"], data["FgCorr_sd"], data["Bg_Corr"], data["Bg_av_Corr"], data["BgCorr_sd"], data["Mann-Z"], data["p-value"],
-	data["Date"]))
+	data["Date"], confounder))
 		fin.close()
 
-		return	tracks, runList, trackPaths, labs, tissues, devstages, marks, samples 
+		return	tracks, runList, trackPaths, labs, tissues, devstages, marks, samples, confounders 
 	
 	def parseChrom(self, fname):
 		"""
@@ -318,7 +351,17 @@ class Parser:
 			if dir.endswith("/"):
 				dir = dir[0:(len(dir)-1)]
 			return(abs_path + "/" + dir)
-#id    	trackPath           	resPath             	map                 	mapIv       	pcorProfile         	NA	maxNA 	maxZer	interv	strand	compl 	step	bpType	wSize 	wStep 	flank 	noise 	kernel	Kern-Sgm	kern-Sh 	nShuffle	MaxShfl 	threshold
+
+	def getConfounderName(self, path):
+		"""
+		Parse path, get confounder name if exists
+		Return confounder name if exists, None otherwise
+		"""
+		elems = path.strip("/").split("/")
+		name = elems[-1]
+		if name.endswith(".proj"):
+			return(name.replace(".proj", ""))
+		return(None)
 	def parseParam(self, fname):
 		"""
 		Parse parameters file
@@ -333,6 +376,7 @@ class Parser:
 		paramHash = {}
 		trackPaths = {}
 		resPaths = {}
+		confounderNames = {}
 		runId = ""
 		for line in fin:
 			line = line.strip()
@@ -346,6 +390,9 @@ class Parser:
 					runId = values[i]
 					continue
 				if keys[i] == "trackPath":
+					confounderName = self.getConfounderName(values[i])
+					if not confounderName is None:
+						confounderNames[runId] = confounderName
 					trackPaths[runId] = self.makePath(path, values[i])
 					continue
 					
@@ -446,8 +493,37 @@ class Parser:
 			paramHash = {}
 		fin.close()
 		
-		return paramParamHash, trackPaths, resPaths
-
+		return paramParamHash, trackPaths, resPaths, confounderNames
+	def parseConfounder(self, fname, confounderMemberPath):
+		"""
+		Parse .cvr confounder file
+		Return dict of members with eigen values and dict of paths
+		"""
+		fin = open(fname)
+		confHash = {}
+		paths = set()
+		names = None
+		eigen_values = None
+		eigen = False
+		for line in fin:
+			line = line.strip()
+			if names is None:
+				names = line.split()
+				continue
+			if line.startswith("eigenValues"):
+				eigen = True
+				continue
+			if eigen:
+				eigen_values = line.split(";")
+				for i in range(len(names)):
+					path = confounderMemberPath + "/" + names[i]
+					eigenValue = float(eigen_values[i].strip())
+					confHash[names[i]] = ConfounderMember(names[i], path, eigenValue)
+					paths.add(path)
+				break
+			
+		fin.close()
+		return(confHash, paths)
 	def parseConfigParam(self, fname):
 		"""
 		Parse parameters Config file

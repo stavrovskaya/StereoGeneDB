@@ -121,7 +121,7 @@ CREATE TABLE  tissue (
 
 CREATE TABLE devstage (
   `id` INTEGER  NOT NULL AUTO_INCREMENT,
-  `devstage` VARCHAR(30)  COLLATE latin1_general_ci NOT NULL,
+  `devstage` VARCHAR(100)  COLLATE latin1_general_ci NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `devstage` (`devstage`)
 )
@@ -138,18 +138,17 @@ ENGINE = InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
 CREATE TABLE confounder (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `confounder_name` VARCHAR(45) NOT NULL,
-  `confounder_path_id` INT NOT NULL,
-  PRIMARY KEY (`id`),
-  INDEX `conf_path_key_idx` (`confounder_path_id` ASC),
-  CONSTRAINT `conf_path_key` FOREIGN KEY (`confounder_path_id`) REFERENCES `track_path` (`id`))
+  `confounder_name` VARCHAR(100) NOT NULL,
+  PRIMARY KEY (`id`)
+  )
   ENGINE = InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
 CREATE TABLE confounder_member (
   `id` INT NOT NULL AUTO_INCREMENT,
   `confounder_id` INT NOT NULL,
-  `member_name` VARCHAR(45) NOT NULL,
+  `member_name` VARCHAR(100) NOT NULL,
   `member_path_id` INT NOT NULL,
+  `eigen_value` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `conf_key_idx` (`confounder_id` ASC),
   CONSTRAINT `member_confounder_key` FOREIGN KEY (`confounder_id`) REFERENCES `confounder` (`id`), 
@@ -167,7 +166,6 @@ CREATE TABLE  track (
   `lab_id` int(11) DEFAULT NULL,
   `devstage_id` int(11) DEFAULT NULL,
   `track_path_id`  int(11) NOT NULL,
-  `confounder_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `fk_tissue` (`tissue_id`),
   KEY `fk_mark` (`mark_id`),
@@ -181,8 +179,7 @@ CREATE TABLE  track (
   CONSTRAINT `fk_mark` FOREIGN KEY (`mark_id`) REFERENCES `mark` (`id`),
   CONSTRAINT `fk_sample` FOREIGN KEY (`sample_id`) REFERENCES `sample` (`id`),
   CONSTRAINT `fk_tissue` FOREIGN KEY (`tissue_id`) REFERENCES `tissue` (`id`),
-  CONSTRAINT `fk_track_path` FOREIGN KEY (`track_path_id`) REFERENCES `track_path` (`id`),
-  CONSTRAINT `fk_confounder` FOREIGN KEY (`confounder_id`) REFERENCES `confounder` (`id`)
+  CONSTRAINT `fk_track_path` FOREIGN KEY (`track_path_id`) REFERENCES `track_path` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
 
@@ -200,6 +197,7 @@ CREATE TABLE  run (
   `track2_id` int(11) NOT NULL,
   `param_id` int(11) NOT NULL,
   `prog_run_id` varchar(20) COLLATE latin1_general_ci NOT NULL,
+  `confounder_id` int(11) DEFAULT NULL,
   `nFgr` int(11) NOT NULL,
   `nBkg` int(11) NOT NULL,
   `Fg_Corr` float NOT NULL,  
@@ -218,7 +216,8 @@ CREATE TABLE  run (
   UNIQUE KEY `run_unique` (`track1_id`, `track2_id`, `param_id`),
   CONSTRAINT `fk_param` FOREIGN KEY (`param_id`) REFERENCES `param` (`id`),
   CONSTRAINT `fk_track1` FOREIGN KEY (`track1_id`) REFERENCES `track` (`id`),
-  CONSTRAINT `fk_track2` FOREIGN KEY (`track2_id`) REFERENCES `track` (`id`)
+  CONSTRAINT `fk_track2` FOREIGN KEY (`track2_id`) REFERENCES `track` (`id`),
+  CONSTRAINT `fk_confounder` FOREIGN KEY (`confounder_id`) REFERENCES `confounder` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
 
@@ -244,23 +243,6 @@ CREATE TABLE  chrom (
   UNIQUE KEY `chrom_uniq` (`org_id`,`chrom`),
   KEY `org_fk_constraint` (`org_id`),
   CONSTRAINT `org_fk_constraint` FOREIGN KEY (`org_id`) REFERENCES `org` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
-
-
-
-CREATE TABLE  chrom_stat (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `run_id` int(11) NOT NULL,
-  `chrom_id` int(11) NOT NULL,
-  `track1_av` float NOT NULL,
-  `track2_av` float NOT NULL,
-  `cc` float NOT NULL,
-  `count` int(11) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `chrom_fk` (`chrom_id`),
-  UNIQUE KEY `run_unique` (`run_id`, `chrom_id`),
-  CONSTRAINT `chrom_fk` FOREIGN KEY (`chrom_id`) REFERENCES `chrom` (`id`),
-  CONSTRAINT `run_fk` FOREIGN KEY (`run_id`) REFERENCES `run` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
 
